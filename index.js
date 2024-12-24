@@ -46,16 +46,10 @@ async function run() {
 
     // 1. Get bookings for a specific user
     app.get('/bookings', async (req, res) => {
-      try {
-        const { email } = req.query; // User's email passed as a query parameter
-        if (!email) {
-          return res.status(400).send({ error: 'Email is required to fetch bookings.' });
-        }
+        const email = req.query.email;
         const result = await bookingsCollection.find({ userEmail: email }).toArray();
         res.send(result);
-      } catch (error) {
-        res.status(500).send({ error: 'Failed to fetch bookings.' });
-      }
+      
     });
 
     // 2. Add a new booking
