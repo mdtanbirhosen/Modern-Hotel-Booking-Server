@@ -46,10 +46,10 @@ async function run() {
 
     // 1. Get bookings for a specific user
     app.get('/bookings', async (req, res) => {
-        const email = req.query.email;
-        const result = await bookingsCollection.find({ userEmail: email }).toArray();
-        res.send(result);
-      
+      const email = req.query.email;
+      const result = await bookingsCollection.find({ userEmail: email }).toArray();
+      res.send(result);
+
     });
 
     // 2. Add a new booking
@@ -109,6 +109,29 @@ async function run() {
         res.status(500).send({ error: 'Failed to add review.' });
       }
     });
+    // update availability from details page
+    // PATCH /rooms/:id/availability
+    app.patch("/rooms/:id/availability", async (req, res) => {
+      const roomId = req.params.id;
+      const { availability } = req.body;
+
+      try {
+        const result = await roomsCollection.updateOne(
+          { _id: new ObjectId(roomId) },
+          { $set: { availability } }
+        );
+
+        if (result.modifiedCount > 0) {
+          res.status(200).send({ message: "Room availability updated successfully" });
+        } else {
+          res.status(404).send({ message: "Room not found" });
+        }
+      } catch (error) {
+        console.error("Error updating room availability:", error);
+        res.status(500).send({ message: "Internal server error" });
+      }
+    });
+
 
 
   } finally {
