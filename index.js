@@ -30,12 +30,26 @@ async function run() {
     // Get all rooms
     app.get('/rooms', async (req, res) => {
       try {
-        const result = await roomsCollection.find().toArray();
+        const { minPrice, maxPrice } = req.query; // Extract minPrice and maxPrice from query params
+
+        // Build a filter object
+        const filter = {};
+        if (minPrice) {
+          filter.price = { $gte: parseFloat(minPrice) }; // Filter rooms with price >= minPrice
+        }
+        if (maxPrice) {
+          filter.price = filter.price || {};
+          filter.price.$lte = parseFloat(maxPrice); // Filter rooms with price <= maxPrice
+        }
+
+        const result = await roomsCollection.find(filter).toArray();
         res.send(result);
       } catch (error) {
+        console.error('Error fetching rooms:', error);
         res.status(500).send({ error: 'Failed to fetch rooms.' });
       }
     });
+
     // get room data for details page
     app.get('/roomDetails/:id', async (req, res) => {
       const id = req.params.id;
@@ -50,6 +64,10 @@ async function run() {
       query = { roomId: roomId };
       const result = await reviewsCollection.find(query).toArray();
       res.send(result)
+    })
+    app.get('/reviews', async (req, res) => {
+      const result = await reviewsCollection.find().toArray();
+      res.send(result);
     })
 
 
