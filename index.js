@@ -44,6 +44,15 @@ async function run() {
       res.send(result)
     })
 
+    // get specific rooms review
+    app.get('/reviews/:roomId', async (req, res) => {
+      const roomId = req.params.roomId;
+      query = { roomId: roomId };
+      const result = await reviewsCollection.find(query).toArray();
+      res.send(result)
+    })
+
+
     // 1. Get bookings for a specific user
     app.get('/bookings', async (req, res) => {
       const email = req.query.email;
