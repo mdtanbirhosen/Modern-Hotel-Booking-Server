@@ -1,12 +1,22 @@
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
+const jwt = require('jsonwebtoken')
 require('dotenv').config();
 
 const port = process.env.PORT || 5000;
 const app = express();
 
-app.use(cors());
+// changed
+const corsOptions = {
+  origin: ['http://localhost:5173'],
+  credentials: true,
+
+}
+
+app.use(cors(corsOptions));
 app.use(express.json());
+app.use(cookieParser())
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.q5jln.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -20,12 +30,48 @@ const client = new MongoClient(uri, {
   },
 });
 
+// verify token
+const verifyToken = (req, res, next) => {
+  const token = req.cookies?.token;
+  if (!token) return res.status(401).send({ message: 'unauthorized access' })
+  jwt.verify(token, process.env.JWT_SECRET_TOKEN, (error, decoded) => {
+    if(error){
+      return res.status(401).send({ message: 'unauthorized access' })
+    }
+    req.user = decoded
+  })
+
+  next()
+}
+
 async function run() {
   try {
     const database = client.db('HotelDB');
     const roomsCollection = database.collection('rooms');
     const bookingsCollection = database.collection('bookings');
     const reviewsCollection = database.collection('reviews');
+
+    // jwt generate ==> tanjim created
+    app.post('/jwt', async (req, res) => {
+      const email = req.body;
+      // create jwt
+      const token = jwt.sign(email, process.env.JWT_SECRET_TOKEN, { expiresIn: '250d' })
+      console.log(token);
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict'
+      }).send({ success: true })
+    })
+
+    // jwt clear
+    app.get('/logout', async (req, res) => {
+      res.clearCookie('token', {
+        maxAge: 0,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict'
+      }).send({ success: true })
+    })
 
     // Get all rooms
     app.get('/rooms', async (req, res) => {
@@ -50,6 +96,8 @@ async function run() {
       }
     });
 
+
+
     // get room data for details page
     app.get('/roomDetails/:id', async (req, res) => {
       const id = req.params.id;
@@ -70,10 +118,14 @@ async function run() {
       res.send(result);
     })
 
-
+    // changed
     // 1. Get bookings for a specific user
-    app.get('/bookings', async (req, res) => {
+    app.get('/bookings', verifyToken, async (req, res) => {
+      const decodedEmail = req?.user?.email
       const email = req.query.email;
+      console.log('email from token-->', decodedEmail)
+      console.log('email from params-->', email)
+      if(decodedEmail !== email) return res.status(401).send({ message: 'unauthorized access' })
       const result = await bookingsCollection.find({ userEmail: email }).toArray();
       res.send(result);
 
