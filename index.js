@@ -9,7 +9,7 @@ const app = express();
 
 // changed
 const corsOptions = {
-  origin: ['http://localhost:5173','https://visa-navigator-server-side.vercel.app'],
+  origin: ['http://localhost:5173','https://visa-navigator-server-side.vercel.app','https://modern-hotel-booking-client.vercel.app'],
   credentials: true,
 
 }
