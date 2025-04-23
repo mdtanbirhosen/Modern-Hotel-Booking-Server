@@ -56,7 +56,7 @@ async function run() {
       const email = req.body;
       // create jwt
       const token = jwt.sign(email, process.env.JWT_SECRET_TOKEN, { expiresIn: '250d' })
-      console.log(token);
+      // console.log(token);
       res.cookie('token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
